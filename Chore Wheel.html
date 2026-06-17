@@ -1,0 +1,1380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Task Wheel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,wght@0,400;0,600;1,400;1,600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --sky:#ffffff;--sand:#f4f6fb;--terra:#1a3a6b;--terra-light:#2b5db5;--bone:#ffffff;
+  --dark:#0f2150;--mid:#4a5a7a;--light:#c4cedf;
+  --seg0:#3a6fc4;--seg1:#5b9bd5;--seg2:#7ab3e0;--seg3:#4a82c8;--seg4:#6495d8;
+  --seg5:#3d7abf;--seg6:#5590cc;--seg7:#7aaad8;--seg8:#4878bb;--seg9:#6698d0;
+  --seg10:#3568b8;--seg11:#5e8ed4;
+  --rest:#d0e4f7;
+}
+html{font-size:16px}
+body{
+  background:var(--sand);
+  min-height:100vh;font-family:'Space Mono',monospace;color:var(--dark);
+}
+h1,h2,h3,.display{font-family:'Bodoni Moda',serif}
+
+/* Layout */
+#app{display:flex;flex-direction:column;align-items:center;min-height:100vh;padding:24px 16px 48px}
+.screen{width:100%;max-width:700px;animation:fadeIn .25s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* Header */
+.site-header{text-align:center;margin-bottom:28px;padding-bottom:20px;border-bottom:2px solid var(--terra)}
+.site-header h1{font-size:2.6rem;font-style:italic;color:var(--terra);letter-spacing:-.02em;line-height:1}
+.site-header p{font-size:.82rem;color:var(--mid);margin-top:8px;line-height:1.55;max-width:520px;margin-left:auto;margin-right:auto}
+
+/* Cards */
+.card{background:var(--bone);border-radius:4px;padding:20px 22px;margin-bottom:16px;
+  border:1px solid var(--light);box-shadow:0 1px 6px rgba(10,32,80,.06)}
+
+/* Segmented controls */
+.seg-group{display:flex;gap:0}
+.seg-group button{
+  flex:1;padding:7px 4px;font-family:'Space Mono',monospace;font-size:.68rem;
+  border:1.5px solid var(--light);background:transparent;color:var(--mid);
+  cursor:pointer;transition:background .15s,color .15s;line-height:1.2;text-align:center
+}
+.seg-group button:first-child{border-radius:4px 0 0 4px}
+.seg-group button:last-child{border-radius:0 4px 4px 0}
+.seg-group button+button{border-left:none}
+.seg-group button.active{background:var(--terra);color:#fff;border-color:var(--terra)}
+.seg-group button:hover:not(.active){background:rgba(26,58,107,.07)}
+
+/* Form */
+.add-form{display:flex;flex-direction:column;gap:14px}
+.field-row{display:flex;flex-direction:column;gap:6px}
+.field-row label{font-size:.68rem;letter-spacing:.1em;color:var(--terra);text-transform:uppercase;font-weight:700}
+.field-row input[type=text]{
+  width:100%;padding:10px 12px;border:1.5px solid var(--light);border-radius:4px;
+  font-family:'Space Mono',monospace;font-size:.85rem;background:transparent;color:var(--dark);
+  outline:none;transition:border-color .15s
+}
+.field-row input[type=text]:focus{border-color:var(--terra)}
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  padding:11px 22px;border-radius:4px;border:none;cursor:pointer;
+  font-family:'Space Mono',monospace;font-size:.8rem;font-weight:700;
+  letter-spacing:.04em;transition:opacity .15s,transform .1s;
+}
+.btn:active:not(:disabled){transform:scale(.97)}
+.btn:disabled{opacity:.4;cursor:default}
+.btn-primary{background:var(--terra);color:#fff}
+.btn-primary:hover:not(:disabled){background:var(--terra-light)}
+.btn-secondary{background:transparent;color:var(--terra);border:1.5px solid var(--terra)}
+.btn-secondary:hover:not(:disabled){background:rgba(26,58,107,.06)}
+.btn-ghost{background:transparent;color:var(--mid);border:1.5px solid var(--light);font-size:.72rem;padding:6px 12px}
+.btn-ghost:hover:not(:disabled){border-color:var(--terra);color:var(--terra)}
+.btn-danger{background:transparent;color:#c0392b;border:1.5px solid #c0392b;font-size:.72rem;padding:6px 12px}
+.btn-danger:hover:not(:disabled){background:#c0392b;color:#fff}
+
+/* Section headings */
+.section-title{
+  font-family:'Bodoni Moda',serif;font-style:italic;font-size:1.15rem;
+  color:var(--terra);margin-bottom:12px;border-bottom:2px solid var(--terra);
+  padding-bottom:6px
+}
+
+/* Task list */
+.task-list{display:flex;flex-direction:column;gap:8px}
+.task-row{
+  display:flex;align-items:center;gap:10px;padding:10px 12px;
+  background:var(--sand);border-radius:4px;border:1px solid var(--light)
+}
+.swatch{width:14px;height:14px;border-radius:2px;flex-shrink:0}
+.task-name{flex:1;font-size:.82rem;color:var(--dark);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.task-meta{font-size:.65rem;color:var(--mid);white-space:nowrap}
+.task-pct{font-size:.65rem;color:var(--terra);white-space:nowrap;font-weight:700}
+.task-actions{display:flex;gap:5px;flex-shrink:0}
+
+/* Status bar */
+.break-status{
+  text-align:center;font-size:.7rem;color:var(--mid);letter-spacing:.06em;
+  padding:6px 10px;background:rgba(208,228,247,.5);border-radius:4px;margin-bottom:12px;
+  border:1px solid rgba(26,58,107,.1)
+}
+
+/* Wheel screen */
+.wheel-wrap{position:relative;display:flex;justify-content:center;margin:16px 0}
+#wheel-canvas{border-radius:50%;display:block;margin:auto}
+.wheel-pointer{
+  position:absolute;top:-14px;left:50%;transform:translateX(-50%);
+  width:0;height:0;
+  border-left:11px solid transparent;border-right:11px solid transparent;
+  border-top:24px solid var(--dark);
+  filter:drop-shadow(0 2px 4px rgba(0,0,0,.3))
+}
+
+/* Result card */
+.result-card{text-align:center;padding:28px}
+.result-card h2{font-style:italic;font-size:2rem;color:var(--terra);margin-bottom:8px}
+.result-card .task-title{font-size:1.5rem;font-weight:600;margin-bottom:16px;color:var(--dark)}
+.formula-row{display:flex;justify-content:center;gap:24px;margin:14px 0;flex-wrap:wrap}
+.formula-item{display:flex;flex-direction:column;align-items:center;gap:2px}
+.formula-label{font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:var(--mid)}
+.formula-value{font-size:1.2rem;font-weight:700;color:var(--terra)}
+.formula-result{font-size:.75rem;color:var(--mid);margin-top:4px}
+
+/* Timer */
+.timer-display{font-size:4rem;font-family:'Bodoni Moda',serif;font-weight:600;
+  text-align:center;color:var(--dark);letter-spacing:.05em;margin:16px 0}
+.timer-presets{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:12px}
+.timer-custom{display:flex;gap:8px;align-items:center;justify-content:center;margin-bottom:16px}
+.timer-custom input{
+  width:80px;padding:8px;border:1.5px solid var(--light);border-radius:8px;
+  font-family:'Space Mono',monospace;font-size:.9rem;text-align:center;background:transparent;color:var(--dark);outline:none
+}
+.timer-custom input:focus{border-color:var(--terra)}
+.timer-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+
+/* Praise */
+.praise-box{
+  background:linear-gradient(135deg,rgba(26,58,107,.05),rgba(91,155,213,.08));
+  border-radius:4px;padding:24px;text-align:center;margin:16px 0;
+  border:1px solid rgba(26,58,107,.12)
+}
+.praise-box .emoji{font-size:2.5rem;margin-bottom:10px}
+.praise-box p{font-family:'Bodoni Moda',serif;font-style:italic;font-size:1.15rem;color:var(--dark);line-height:1.5}
+
+/* Done list */
+.done-list{display:flex;flex-direction:column;gap:6px;max-height:220px;overflow-y:auto;padding-right:4px}
+.done-row{display:flex;align-items:center;gap:8px;font-size:.78rem;color:var(--mid);
+  padding:7px 10px;background:var(--sand);border-radius:4px;border:1px solid var(--light)}
+.done-row .check{color:#2e7d52;font-size:1rem;flex-shrink:0}
+
+/* Break screen */
+.break-activity{
+  background:rgba(208,228,247,.3);border-radius:4px;padding:18px 22px;text-align:center;
+  margin:12px 0;border:1px solid rgba(26,58,107,.12)
+}
+.break-activity .activity-icon{font-size:2rem;margin-bottom:8px}
+.break-activity p{font-family:'Bodoni Moda',serif;font-style:italic;font-size:1.1rem;color:var(--dark)}
+
+/* Break-it-down callout */
+.breakdown-callout{
+  background:rgba(208,228,247,.2);border-radius:4px;padding:16px 18px;margin-top:16px;
+  border:1px solid rgba(26,58,107,.15);text-align:left
+}
+.breakdown-callout>p{font-size:.75rem;color:var(--mid);margin-bottom:10px;line-height:1.5;text-align:center}
+.breakdown-parent{
+  display:flex;flex-direction:column;gap:2px;padding:10px 12px;
+  background:rgba(26,58,107,.05);border-radius:4px;margin-bottom:14px;
+  border-left:3px solid var(--terra)
+}
+.breakdown-parent-label{font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--mid);font-weight:700}
+.breakdown-parent-name{font-size:.9rem;color:var(--dark);font-weight:700;margin-top:2px}
+.breakdown-parent-meta{font-size:.65rem;color:var(--mid);margin-top:1px}
+.breakdown-form{display:flex;flex-direction:column;gap:0}
+.breakdown-form-fields{display:flex;flex-direction:column;gap:8px;margin-bottom:4px}
+
+/* Settings */
+.settings-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;
+  border-bottom:1px solid var(--light)}
+.settings-row:last-child{border-bottom:none}
+.settings-label{font-size:.8rem;color:var(--dark)}
+.settings-sub{font-size:.65rem;color:var(--mid);margin-top:2px}
+.toggle{position:relative;display:inline-block;width:42px;height:24px;flex-shrink:0}
+.toggle input{opacity:0;width:0;height:0}
+.toggle-slider{
+  position:absolute;inset:0;border-radius:12px;background:var(--light);
+  cursor:pointer;transition:background .2s
+}
+.toggle-slider::after{
+  content:'';position:absolute;width:18px;height:18px;left:3px;top:3px;
+  border-radius:50%;background:#fff;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.2)
+}
+.toggle input:checked+.toggle-slider{background:var(--terra)}
+.toggle input:checked+.toggle-slider::after{transform:translateX(18px)}
+
+/* Confetti */
+.confetti-piece{
+  position:fixed;width:8px;height:8px;border-radius:2px;pointer-events:none;z-index:9999;
+  animation:confetti-fall linear forwards
+}
+@keyframes confetti-fall{
+  0%{opacity:1;transform:translateY(0) rotate(0deg)}
+  100%{opacity:0;transform:translateY(120vh) rotate(720deg)}
+}
+
+/* Nav */
+.nav-row{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap}
+.nav-row .btn{font-size:.7rem;padding:7px 14px}
+
+/* Empty state */
+.empty{text-align:center;color:var(--mid);font-size:.8rem;padding:20px;font-style:italic}
+
+/* Inline edit row */
+.edit-row{
+  background:rgba(26,58,107,.04);border-radius:4px;
+  border:1.5px solid rgba(26,58,107,.2);padding:12px 14px;
+  display:flex;flex-direction:column;gap:10px
+}
+.edit-row input[type=text]{
+  width:100%;padding:8px 10px;border:1.5px solid var(--light);border-radius:4px;
+  font-family:'Space Mono',monospace;font-size:.82rem;background:#fff;color:var(--dark);outline:none
+}
+.edit-row input[type=text]:focus{border-color:var(--terra)}
+.edit-fields{display:flex;flex-direction:column;gap:8px}
+.edit-field-row{display:flex;align-items:center;gap:8px}
+.edit-field-label{font-size:.62rem;letter-spacing:.08em;text-transform:uppercase;color:var(--terra);
+  font-weight:700;width:76px;flex-shrink:0}
+.edit-row .seg-group{flex:1}
+.edit-row .seg-group button{font-size:.62rem;padding:5px 3px}
+.edit-row-actions{display:flex;gap:8px;justify-content:flex-end}
+
+/* Backlog / done collapsible */
+.collapsible-header{
+  display:flex;justify-content:space-between;align-items:center;cursor:pointer;
+  padding:4px 0;user-select:none
+}
+.collapsible-header:hover .section-title{color:var(--terra-light)}
+.collapsible-body{overflow:hidden;transition:max-height .3s ease}
+
+/* About section */
+.about-body{display:flex;flex-direction:column;gap:20px;margin-top:16px}
+.about-section h3{font-family:'Bodoni Moda',serif;font-style:italic;font-size:1rem;color:var(--terra);margin-bottom:8px}
+.about-section p{font-size:.8rem;color:var(--mid);line-height:1.65;margin-bottom:8px}
+.about-section p:last-child{margin-bottom:0}
+.about-formula{
+  font-family:'Space Mono',monospace;font-size:.9rem;font-weight:700;color:var(--dark);
+  background:var(--sand);border:1px solid var(--light);border-radius:4px;
+  padding:10px 14px;text-align:center;margin:10px 0;letter-spacing:.04em
+}
+.about-list{display:flex;flex-direction:column;gap:7px;margin:8px 0 8px 16px}
+.about-list li{font-size:.8rem;color:var(--mid);line-height:1.6}
+.about-list li strong{color:var(--dark)}
+.about-table{border:1px solid var(--light);border-radius:4px;overflow:hidden;margin:10px 0;font-size:.72rem}
+.about-table-row{display:grid;grid-template-columns:1.4fr 1.2fr 1.2fr .8fr;gap:0}
+.about-table-row span{padding:7px 10px;border-bottom:1px solid var(--light);color:var(--mid)}
+.about-table-row:last-child span{border-bottom:none}
+.about-table-head span{background:var(--sand);color:var(--terra);font-weight:700;letter-spacing:.06em;text-transform:uppercase;font-size:.62rem}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--light);border-radius:4px}
+
+/* Reduce-motion */
+@media(prefers-reduced-motion:reduce){
+  *{animation-duration:.01ms!important;transition-duration:.01ms!important}
+}
+.reduce-motion *{animation-duration:.01ms!important;transition-duration:.01ms!important}
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+// ─── State ────────────────────────────────────────────────────────────────────
+const COLORS = ['--seg0','--seg1','--seg2','--seg3','--seg4','--seg5','--seg6','--seg7','--seg8','--seg9','--seg10','--seg11'];
+const getColor = i => getComputedStyle(document.documentElement).getPropertyValue(COLORS[i % COLORS.length]).trim();
+
+const PRAISE = [
+  { warm:'You showed up. That\'s the hardest part — and you did it.', dry:'Task completed. Resistance was overcome.', minimal:'Done.' },
+  { warm:'Action precedes motivation — you didn\'t wait to feel ready. You just started.', dry:'Output delivered. The waiting was longer than the doing.', minimal:'Good.' },
+  { warm:'Small wins compound. This one is in the bank.', dry:'One unit of progress logged. The math works in your favour.', minimal:'Next.' },
+  { warm:'The dread was bigger than the task. It always is.', dry:'Anticipated effort exceeded actual effort, as usual.', minimal:'Noted.' },
+  { warm:'Momentum is real. You just made the next thing easier.', dry:'Activation energy spent. Subsequent tasks are now cheaper.', minimal:'Carry on.' },
+  { warm:'You proved to yourself today that you can start.', dry:'Task initiated and completed. Proof of concept: successful.', minimal:'Check.' },
+  { warm:'That took whatever you had right now — and it was enough.', dry:'Resources applied. Outcome achieved.', minimal:'Done.' },
+  { warm:'Finishing beats perfect. You finished.', dry:'Completion > perfection. Data point confirmed.', minimal:'Yes.' },
+  { warm:'Rest is earned. You earned it.', dry:'Recovery phase authorised.', minimal:'Rest.' },
+  { warm:'You picked the hard one and did it anyway. That\'s character.', dry:'Aversive task selected and completed. Avoidance resisted.', minimal:'Solid.' },
+];
+
+const BREAK_ACTIVITIES = [
+  { icon:'☀️', text:'Step outside for two minutes. No phone. Just daylight and air.' },
+  { icon:'💧', text:'Drink a full glass of water and stretch your neck side to side.' },
+  { icon:'🌿', text:'Look out a window at something far away for 60 seconds. Let your eyes relax.' },
+  { icon:'🚶', text:'Take a short walk — even just to the end of the hall and back, no destination.' },
+  { icon:'🤸', text:'Shake out your arms and legs. Roll your shoulders. Move the body you\'ve been ignoring.' },
+  { icon:'👁️', text:'Soft-focus your eyes — stare at the middle distance and let your gaze go loose.' },
+  { icon:'🌬️', text:'Four counts in, hold four, out four. Repeat three times. That\'s it.' },
+];
+
+function defaultState() {
+  return {
+    tasks: [],
+    spinsSinceBreak: 0,
+    breakTarget: randInt(3, 5),
+    settings: { breaksEnabled: true, reduceMotion: false, praiseStyle: 'warm' },
+  };
+}
+
+function load() {
+  try {
+    const raw = localStorage.getItem('chore-wheel-v1');
+    if (!raw) return defaultState();
+    const s = JSON.parse(raw);
+    if (!s.settings) s.settings = defaultState().settings;
+    if (s.breakTarget == null) s.breakTarget = randInt(3,5);
+    return s;
+  } catch { return defaultState(); }
+}
+
+function save(state) {
+  localStorage.setItem('chore-wheel-v1', JSON.stringify(state));
+}
+
+function randInt(min, max) { return min + Math.floor(Math.random() * (max - min + 1)); }
+function uid() { return Math.random().toString(36).slice(2); }
+
+function weight(t) { return (t.importance * t.importance) / (t.scariness * t.duration); }
+
+function activeTasks(state) { return state.tasks.filter(t => t.status === 'active'); }
+function backlogs(state) { return state.tasks.filter(t => t.status === 'backlog'); }
+function dones(state) { return state.tasks.filter(t => t.status === 'done'); }
+
+function totalWeight(tasks) { return tasks.reduce((s,t) => s + weight(t), 0); }
+
+function pickWeighted(tasks) {
+  const total = totalWeight(tasks);
+  let r = Math.random() * total;
+  for (const t of tasks) { r -= weight(t); if (r <= 0) return t; }
+  return tasks[tasks.length - 1];
+}
+
+// ─── App ──────────────────────────────────────────────────────────────────────
+let state = load();
+
+// Screen: 'home' | 'wheel' | 'spinning' | 'result' | 'timer' | 'done' | 'break-timer' | 'settings'
+let screen = 'home';
+let currentTask = null;   // task currently selected by spin
+let isBreak = false;
+let timerMinutes = 25;
+let timerSeconds = 0;
+let timerPaused = false;
+let timerInterval = null;
+let breakActivity = null;
+let collapseBacklog = true;
+let collapseAbout = true;
+let collapseDone = true;
+let editingId = null;
+let editState = {};
+let showBreakdown = false;
+let breakdownState = { name:'', importance:2, scariness:1, duration:1 };
+
+// Spin animation state
+let spinAngle = 0;
+let spinTarget = 0;
+let spinStart = 0;
+let spinDuration = 4200;
+let animFrame = null;
+let predetWinnerIdx = -1;
+
+function render() {
+  const app = document.getElementById('app');
+  if (state.settings.reduceMotion) app.classList.add('reduce-motion');
+  else app.classList.remove('reduce-motion');
+
+  let html = `<div class="screen">`;
+  html += renderHeader();
+
+  if (screen === 'home') html += renderHome();
+  else if (screen === 'wheel' || screen === 'spinning') html += renderWheel();
+  else if (screen === 'result') html += renderResult();
+  else if (screen === 'timer') html += renderTimer();
+  else if (screen === 'done') html += renderDone();
+  else if (screen === 'break-timer') html += renderBreakTimer();
+  else if (screen === 'settings') html += renderSettings();
+
+  html += `</div>`;
+  app.innerHTML = html;
+  bindEvents();
+
+  if (screen === 'wheel' || screen === 'spinning') {
+    drawWheel(spinAngle);
+    if (screen === 'spinning') startSpin();
+  }
+  if (screen === 'timer' || screen === 'break-timer') startTimerUI();
+}
+
+// ─── Header ───────────────────────────────────────────────────────────────────
+function renderHeader() {
+  const showNav = !['spinning'].includes(screen);
+  return `<div class="site-header">
+    <h1>Task Wheel</h1>
+    <p>Let chance pick the next thing so you don't have to. Scary, long jobs get smaller slices, easier to land on, easier to start.</p>
+  </div>
+  ${showNav ? `<div class="nav-row">
+    <button class="btn btn-ghost" onclick="goScreen('home')">Home</button>
+    ${activeTasks(state).length > 0 ? `<button class="btn btn-ghost" onclick="goWheel()">Spin the Wheel</button>` : ''}
+    <button class="btn btn-ghost" onclick="goScreen('settings')">Settings</button>
+  </div>` : ''}`;
+}
+
+// ─── Home ─────────────────────────────────────────────────────────────────────
+function renderHome() {
+  const active = activeTasks(state);
+  const backlog = backlogs(state);
+  const done = dones(state);
+  const total = totalWeight(active);
+  const breakDue = state.settings.breaksEnabled && state.spinsSinceBreak >= state.breakTarget;
+  const spinsLeft = Math.max(0, state.breakTarget - state.spinsSinceBreak);
+
+  let html = '';
+
+  // Break status
+  if (state.settings.breaksEnabled) {
+    html += `<div class="break-status">
+      ${breakDue
+        ? `🌿 <strong>A REST STOP has appeared on the wheel</strong>`
+        : `${spinsLeft} spin${spinsLeft===1?'':'s'} until an energy break joins the wheel`}
+    </div>`;
+  }
+
+  // Add task form
+  html += `<div class="card">
+    <div class="section-title">Add a task</div>
+    <div class="add-form">
+      <div class="field-row">
+        <label>Task name</label>
+        <input type="text" id="task-name" maxlength="60" placeholder="What needs doing?" autocomplete="off">
+      </div>
+      <div class="field-row">
+        <label>Importance</label>
+        <div class="seg-group" id="seg-importance">
+          ${['Nice to do','Should do','Must do'].map((l,i)=>`<button data-val="${i+1}" class="${i+1===2?'active':''}">${l}</button>`).join('')}
+        </div>
+      </div>
+      <div class="field-row">
+        <label>Scariness</label>
+        <div class="seg-group" id="seg-scariness">
+          ${['Fine','Daunting','Dreading it'].map((l,i)=>`<button data-val="${i+1}" class="${i+1===2?'active':''}">${l}</button>`).join('')}
+        </div>
+      </div>
+      <div class="field-row">
+        <label>Duration</label>
+        <div class="seg-group" id="seg-duration">
+          ${['<30 min','~1 hour','2 hr+'].map((l,i)=>`<button data-val="${i+1}" class="${i+1===2?'active':''}">${l}</button>`).join('')}
+        </div>
+      </div>
+      <button class="btn btn-primary" id="btn-add-task" style="align-self:flex-end">+ Add to wheel</button>
+    </div>
+  </div>`;
+
+  // On the wheel
+  html += `<div class="card">
+    <div class="section-title">On the wheel (${active.length})</div>
+    ${active.length === 0 ? `<div class="empty">No active tasks — add some above!</div>` : ''}
+    <div class="task-list">
+      ${active.map((t,i) => {
+        if (editingId === t.id) return renderEditRow(t, getColor(i));
+        const w = weight(t);
+        const pct = total > 0 ? ((w/total)*100).toFixed(1) : '0.0';
+        return `<div class="task-row">
+          <div class="swatch" style="background:${getColor(i)}"></div>
+          <div class="task-name" title="${esc(t.name)}">${esc(t.name)}</div>
+          <div class="task-meta">I${t.importance} S${t.scariness} D${t.duration}</div>
+          <div class="task-pct">${pct}%</div>
+          <div class="task-actions">
+            <button class="btn btn-ghost" onclick="startEdit('${t.id}')">Edit</button>
+            <button class="btn btn-ghost" onclick="parkTask('${t.id}')">Park</button>
+            <button class="btn btn-danger" onclick="deleteTask('${t.id}')">✕</button>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>
+    <div style="margin-top:14px">
+      <button class="btn btn-primary" style="width:100%" ${active.length===0?'disabled':''} onclick="goWheel()">
+        ${active.length===0 ? 'Add tasks to spin' : '✦ Spin the wheel'}
+      </button>
+    </div>
+  </div>`;
+
+  // Backlog
+  html += `<div class="card">
+    <div class="collapsible-header" onclick="toggleCollapse('backlog')">
+      <div class="section-title" style="margin-bottom:0">Backlog (${backlog.length})</div>
+      <span style="color:var(--mid);font-size:.8rem">${collapseBacklog?'▾':'▴'}</span>
+    </div>
+    <div class="collapsible-body" style="max-height:${collapseBacklog?'0':'500px'}">
+      <div style="margin-top:12px">
+      ${backlog.length===0 ? `<div class="empty">Nothing parked</div>` : ''}
+      <div class="task-list">
+        ${backlog.map(t=>{
+          if (editingId === t.id) return renderEditRow(t, null);
+          return `<div class="task-row">
+            <div class="task-name" title="${esc(t.name)}">${esc(t.name)}</div>
+            <div class="task-meta">I${t.importance} S${t.scariness} D${t.duration}</div>
+            <div class="task-actions">
+              <button class="btn btn-ghost" onclick="startEdit('${t.id}')">Edit</button>
+              <button class="btn btn-ghost" onclick="unpark('${t.id}')">To wheel</button>
+              <button class="btn btn-danger" onclick="deleteTask('${t.id}')">✕</button>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+      </div>
+    </div>
+  </div>`;
+
+  // Done
+  html += `<div class="card">
+    <div class="collapsible-header" onclick="toggleCollapse('done')">
+      <div class="section-title" style="margin-bottom:0">Done ✓ (${done.length})</div>
+      <span style="color:var(--mid);font-size:.8rem">${collapseDone?'▾':'▴'}</span>
+    </div>
+    <div class="collapsible-body" style="max-height:${collapseDone?'0':'500px'}">
+      <div style="margin-top:12px">
+      ${done.length===0 ? `<div class="empty">Nothing completed yet</div>` : ''}
+      <div class="done-list">
+        ${done.map(t=>`<div class="done-row"><span class="check">✓</span>${esc(t.name)}</div>`).join('')}
+      </div>
+      </div>
+    </div>
+  </div>`;
+
+  // Start fresh
+  html += `<div style="text-align:center;margin-top:8px">
+    <button class="btn btn-danger" onclick="startFresh()">Start fresh</button>
+  </div>`;
+
+  // About
+  html += `<div class="card" style="margin-top:24px">
+    <div class="collapsible-header" onclick="toggleCollapse('about')">
+      <div class="section-title" style="margin-bottom:0">How it works</div>
+      <span style="color:var(--mid);font-size:.8rem">${collapseAbout?'▾':'▴'}</span>
+    </div>
+    <div class="collapsible-body" style="max-height:${collapseAbout?'0':'2000px'}">
+      <div class="about-body">
+
+        <div class="about-section">
+          <h3>The weight formula</h3>
+          <div class="about-formula">importance² / (scariness × duration)</div>
+          <p>Each task gets a slice of the wheel proportional to its weight. Rate every task on three 1–3 scales and the wheel does the rest.</p>
+          <div class="about-table">
+            <div class="about-table-row about-table-head">
+              <span>Importance</span><span>Scariness</span><span>Duration</span><span>Slice size</span>
+            </div>
+            <div class="about-table-row">
+              <span>3 — Must do</span><span>1 — Fine</span><span>1 — &lt;30 min</span><span>Large</span>
+            </div>
+            <div class="about-table-row">
+              <span>3 — Must do</span><span>3 — Dreading it</span><span>3 — 2 hr+</span><span>Small</span>
+            </div>
+            <div class="about-table-row">
+              <span>1 — Nice to do</span><span>3 — Dreading it</span><span>3 — 2 hr+</span><span>Sliver</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="about-section">
+          <h3>Why this shape</h3>
+          <p>The formula is grounded in <strong>Steel's Procrastination Equation</strong> and <strong>Temporal Motivation Theory</strong>: the likelihood you act on a task rises with its value and falls with its aversiveness and effort cost.</p>
+          <ul class="about-list">
+            <li><strong>Importance is squared</strong> so it dominates. High-stakes work always grows its slice regardless of how scary it is.</li>
+            <li><strong>Scariness and duration divide</strong> rather than block. A terrifying 3-hour job becomes a small, startable slice instead of a wall you avoid indefinitely. You're more likely to land on it, and more likely to begin once you do.</li>
+            <li><strong>Momentum first.</strong> Small, easy tasks have larger slices early on, building the psychological inertia that makes harder tasks feel possible.</li>
+          </ul>
+        </div>
+
+        <div class="about-section">
+          <h3>Energy breaks</h3>
+          <p>Every 3–5 completed tasks, a REST STOP segment appears on the wheel. This is built on two bodies of research:</p>
+          <ul class="about-list">
+            <li><strong>Attention Restoration Theory</strong> (Kaplan, 1989): directed attention depletes across a work session. Brief exposure to low-effort, restorative stimuli (nature, soft focus, gentle movement) replenishes it. The break suggestions in this app are chosen for this reason: they are passive, physical, or nature-leaning. Doomscrolling doesn't restore attention; looking out a window does.</li>
+            <li><strong>Ultradian rhythms</strong>: the brain cycles through roughly 90-minute peaks and troughs of alertness. Periodic rest aligns with these natural cycles rather than fighting them.</li>
+          </ul>
+          <p>The REST STOP is sized generously on the wheel so a break actually happens rather than being spun past every time. Skipping is allowed, but the break stays due until taken.</p>
+        </div>
+
+        <div class="about-section">
+          <h3>Breaking tasks down</h3>
+          <p>When a task lands on the wheel and still feels too large to start, you can create a subtask with scariness set to 1. This is the core of <strong>implementation intentions</strong> research (Gollwitzer, 1999): specifying a concrete first action dramatically increases follow-through, even for aversive tasks. The original task is parked to the backlog; once the first step is done, it returns.</p>
+        </div>
+
+      </div>
+    </div>
+  </div>`;
+
+  return html;
+}
+
+// ─── Wheel ────────────────────────────────────────────────────────────────────
+function renderWheel() {
+  const active = activeTasks(state);
+  const breakDue = state.settings.breaksEnabled && state.spinsSinceBreak >= state.breakTarget;
+  const items = getWheelItems(active, breakDue);
+
+  return `<div class="card" style="padding:12px 12px 20px">
+    <div class="wheel-wrap">
+      <div class="wheel-pointer"></div>
+      <canvas id="wheel-canvas" width="380" height="380"></canvas>
+    </div>
+    ${screen === 'wheel' ? `<div style="text-align:center;margin-top:10px">
+      <button class="btn btn-primary" style="min-width:180px" onclick="beginSpin()">✦ Spin!</button>
+    </div>` : `<div style="text-align:center;margin-top:10px;color:var(--mid);font-size:.8rem">Spinning…</div>`}
+    <div class="task-list" style="margin-top:14px">
+      ${items.map((item,i) => item.isBreak
+        ? `<div class="task-row"><div class="swatch" style="background:var(--rest)"></div><div class="task-name">🌿 REST STOP</div></div>`
+        : `<div class="task-row"><div class="swatch" style="background:${getColor(i)}"></div><div class="task-name">${esc(item.name)}</div></div>`
+      ).join('')}
+    </div>
+  </div>`;
+}
+
+function getWheelItems(active, breakDue) {
+  if (breakDue && active.length > 0) {
+    return [...active, { id:'__break__', isBreak:true }];
+  }
+  return active;
+}
+
+function getWheelWeights(items, active) {
+  return items.map(item => {
+    if (item.isBreak) {
+      const avgW = active.length > 0 ? totalWeight(active) / active.length : 1;
+      return avgW * 1.65;
+    }
+    return weight(item);
+  });
+}
+
+function setupCanvas(canvas) {
+  const dpr = window.devicePixelRatio || 1;
+  const size = 380;
+  canvas.style.width = size + 'px';
+  canvas.style.height = size + 'px';
+  canvas.width = size * dpr;
+  canvas.height = size * dpr;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  return ctx;
+}
+
+function drawWheel(angle) {
+  const canvas = document.getElementById('wheel-canvas');
+  if (!canvas) return;
+  const ctx = setupCanvas(canvas);
+  const size = 380;
+  const cx = size / 2, cy = size / 2, r = cx - 6;
+  ctx.clearRect(0, 0, size, size);
+
+  const active = activeTasks(state);
+  const breakDue = state.settings.breaksEnabled && state.spinsSinceBreak >= state.breakTarget;
+  const items = getWheelItems(active, breakDue);
+  const weights = getWheelWeights(items, active);
+  const tot = weights.reduce((a,b) => a+b, 0);
+
+  // Shadow
+  ctx.save();
+  ctx.shadowBlur = 18;
+  ctx.shadowColor = 'rgba(43,38,34,.18)';
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, Math.PI*2);
+  ctx.fillStyle = '#fff';
+  ctx.fill();
+  ctx.restore();
+
+  let startA = angle - Math.PI/2; // 12 o'clock
+  items.forEach((item, i) => {
+    const arc = (weights[i]/tot) * Math.PI * 2;
+    const color = item.isBreak ? getComputedStyle(document.documentElement).getPropertyValue('--rest').trim() : getColor(i);
+
+    // Segment
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, r, startA, startA + arc);
+    ctx.closePath();
+    ctx.fillStyle = color;
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,.6)';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    // Label — only when arc is wide enough, clipped to segment
+    if (arc > 0.15) {
+      const midA = startA + arc/2;
+      // Chord width at label radius, used to size the font and max chars
+      const labelR = r * 0.62;
+      const chordHalf = Math.abs(Math.sin(arc / 2)) * labelR;
+      const maxLabelPx = Math.max(chordHalf * 1.8, 10);
+
+      const rawLabel = item.isBreak ? 'REST STOP' : item.name;
+      const fontSize = Math.min(11, Math.max(7, arc > 0.5 ? 11 : arc > 0.3 ? 9 : 7));
+      ctx.font = `700 ${fontSize}px 'Space Mono',monospace`;
+
+      // Truncate to fit chord
+      let label = rawLabel;
+      while (label.length > 1 && ctx.measureText(label).width > maxLabelPx) {
+        label = label.slice(0, -2) + '…';
+      }
+
+      const tx = cx + Math.cos(midA) * labelR;
+      const ty = cy + Math.sin(midA) * labelR;
+
+      ctx.save();
+      // Clip to segment so text never bleeds out
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.arc(cx, cy, r - 2, startA, startA + arc);
+      ctx.closePath();
+      ctx.clip();
+
+      ctx.translate(tx, ty);
+      // Rotate so text runs radially outward (readable from the rim)
+      ctx.rotate(midA + Math.PI / 2);
+      ctx.fillStyle = item.isBreak ? '#4a3f2a' : 'rgba(255,255,255,0.92)';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(label, 0, 0);
+      ctx.restore();
+    }
+    startA += arc;
+  });
+
+  // Center cap
+  ctx.beginPath();
+  ctx.arc(cx, cy, 18, 0, Math.PI*2);
+  ctx.fillStyle = 'var(--bone)';
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(43,38,34,.15)';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+}
+
+// ─── Spin logic ───────────────────────────────────────────────────────────────
+function beginSpin() {
+  const active = activeTasks(state);
+  if (active.length === 0) return;
+
+  const breakDue = state.settings.breaksEnabled && state.spinsSinceBreak >= state.breakTarget;
+  const items = getWheelItems(active, breakDue);
+  const weights = getWheelWeights(items, active);
+  const tot = weights.reduce((a,b) => a+b, 0);
+
+  // Predetermine winner
+  let pick;
+  if (breakDue && state.settings.breaksEnabled) {
+    // bias strongly toward break
+    const breakIdx = items.findIndex(i => i.isBreak);
+    pick = Math.random() < 0.80 ? breakIdx : (() => {
+      let r = Math.random() * totalWeight(active);
+      for (let i=0;i<active.length;i++) { r-=weight(active[i]); if(r<=0) return i; }
+      return 0;
+    })();
+  } else {
+    let r = Math.random() * tot;
+    pick = items.length - 1;
+    for (let i=0;i<items.length;i++) { r -= weights[i]; if(r<=0){pick=i;break;} }
+  }
+
+  predetWinnerIdx = pick;
+
+  // Compute cumulative arc positions
+  const arcs = weights.map(w => (w/tot)*Math.PI*2);
+  let cumulative = [0];
+  for (let i=0;i<arcs.length-1;i++) cumulative.push(cumulative[i]+arcs[i]);
+  // The pointer is at 12 o'clock = -π/2 in canvas terms
+  // We need the winning segment's midpoint to be at 12 o'clock after rotation
+  const midAngle = cumulative[pick] + arcs[pick]/2;
+  // Offset so this midpoint aligns with top (0 in rotated frame)
+  const targetOffset = -midAngle;
+  const fullRotations = (5 + Math.floor(Math.random()*3)) * Math.PI * 2;
+  spinTarget = targetOffset + fullRotations;
+  spinStart = spinAngle;
+  screen = 'spinning';
+  render();
+}
+
+function startSpin() {
+  if (animFrame) cancelAnimationFrame(animFrame);
+  const start = performance.now();
+  const duration = state.settings.reduceMotion ? 600 : spinDuration;
+
+  function easeOutQuart(t) { return 1 - Math.pow(1-t, 4); }
+
+  function tick(now) {
+    const elapsed = now - start;
+    const t = Math.min(elapsed / duration, 1);
+    spinAngle = spinStart + (spinTarget - spinStart) * easeOutQuart(t);
+    drawWheel(spinAngle);
+    if (t < 1) {
+      animFrame = requestAnimationFrame(tick);
+    } else {
+      spinAngle = spinTarget % (Math.PI*2);
+      // Determine winner
+      const active = activeTasks(state);
+      const breakDue = state.settings.breaksEnabled && state.spinsSinceBreak >= state.breakTarget;
+      const items = getWheelItems(active, breakDue);
+      const winner = items[predetWinnerIdx];
+      isBreak = !!winner.isBreak;
+      if (!isBreak) {
+        currentTask = winner;
+      }
+      state.spinsSinceBreak++;
+      if (isBreak) state.spinsSinceBreak = 0; // will be reset after break completes
+      save(state);
+      setTimeout(() => {
+        screen = 'result';
+        render();
+      }, 350);
+    }
+  }
+  animFrame = requestAnimationFrame(tick);
+}
+
+// ─── Result ───────────────────────────────────────────────────────────────────
+function renderResult() {
+  if (isBreak) {
+    breakActivity = BREAK_ACTIVITIES[Math.floor(Math.random() * BREAK_ACTIVITIES.length)];
+    return `<div class="card result-card">
+      <h2>Rest Stop</h2>
+      <div class="break-activity">
+        <div class="activity-icon">${breakActivity.icon}</div>
+        <p>${breakActivity.text}</p>
+      </div>
+      <p style="color:var(--mid);font-size:.75rem;margin-bottom:18px">Attention restores best with low-effort, physical, or nature-leaning breaks.</p>
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+        <button class="btn btn-primary" onclick="startBreakTimer()">Start 5-minute break</button>
+        <button class="btn btn-secondary" onclick="skipBreak()">Skip</button>
+      </div>
+    </div>`;
+  }
+
+  const t = currentTask;
+  const w = weight(t).toFixed(2);
+  const active = activeTasks(state);
+  const tot = totalWeight(active);
+  const pct = tot > 0 ? ((weight(t)/tot)*100).toFixed(1) : '0';
+
+  return `<div class="card result-card">
+    <h2>Your next task</h2>
+    <div class="task-title">${esc(t.name)}</div>
+    <div class="formula-result" style="margin-bottom:4px">I${t.importance} · S${t.scariness} · D${t.duration} &nbsp;·&nbsp; ${pct}% of the wheel</div>
+    <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:20px">
+      <button class="btn btn-primary" onclick="goTimer()">Start timer</button>
+      <button class="btn btn-secondary" onclick="markDoneFromResult()">Mark done</button>
+      <button class="btn btn-ghost" onclick="goScreen('home')">Not now</button>
+    </div>
+    ${t.scariness > 1 ? (showBreakdown ? `
+    <div class="breakdown-callout">
+      <div class="breakdown-parent">
+        <span class="breakdown-parent-label">Original task</span>
+        <span class="breakdown-parent-name">${esc(t.name)}</span>
+        <span class="breakdown-parent-meta">Importance ${t.importance} · Scariness ${t.scariness} · Duration ${t.duration}</span>
+      </div>
+      <div class="breakdown-form">
+        <div class="field-row" style="margin-bottom:10px">
+          <label>Subtask name</label>
+          <input type="text" id="breakdown-name" maxlength="60" value="${esc(breakdownState.name)}" placeholder="What's the first tiny step?">
+        </div>
+        <div class="breakdown-form-fields">
+          <div class="edit-field-row">
+            <span class="edit-field-label">Importance</span>
+            <div class="seg-group" id="bd-seg-importance">
+              ${['Nice to do','Should do','Must do'].map((l,i)=>`<button data-val="${i+1}" class="${breakdownState.importance===i+1?'active':''}">${l}</button>`).join('')}
+            </div>
+          </div>
+          <div class="edit-field-row">
+            <span class="edit-field-label">Scariness</span>
+            <div class="seg-group" id="bd-seg-scariness">
+              ${['Fine','Daunting','Dreading it'].map((l,i)=>`<button data-val="${i+1}" class="${breakdownState.scariness===i+1?'active':''}">${l}</button>`).join('')}
+            </div>
+          </div>
+          <div class="edit-field-row">
+            <span class="edit-field-label">Duration</span>
+            <div class="seg-group" id="bd-seg-duration">
+              ${['<30 min','~1 hour','2 hr+'].map((l,i)=>`<button data-val="${i+1}" class="${breakdownState.duration===i+1?'active':''}">${l}</button>`).join('')}
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
+          <button class="btn btn-ghost" onclick="cancelBreakdown()">Cancel</button>
+          <button class="btn btn-primary" onclick="createSubtask('${t.id}')">Add subtask to wheel</button>
+        </div>
+      </div>
+    </div>` : `
+    <div class="breakdown-callout">
+      <p>Still feels like too much? Break it into one small, non-scary first step.</p>
+      <button class="btn btn-ghost" onclick="openBreakdown('${t.id}')">Break it down →</button>
+    </div>`) : ''}
+  </div>`;
+}
+
+// ─── Timer ────────────────────────────────────────────────────────────────────
+function renderTimer() {
+  const durMap = {1:15, 2:30, 3:60};
+  const suggested = currentTask ? durMap[currentTask.duration] : 25;
+  const mm = String(Math.floor(timerSeconds/60)).padStart(2,'0');
+  const ss = String(timerSeconds%60).padStart(2,'0');
+
+  return `<div class="card">
+    <div class="section-title">${currentTask ? esc(currentTask.name) : 'Timer'}</div>
+    <div class="timer-display">${mm}:${ss}</div>
+    <div class="timer-presets">
+      ${[15,25,30,45,60].map(m=>`<button class="btn btn-ghost" onclick="setTimer(${m})">${m} min</button>`).join('')}
+    </div>
+    <div class="timer-custom">
+      <span style="font-size:.75rem;color:var(--mid)">Custom:</span>
+      <input type="number" id="custom-min" min="1" max="240" placeholder="${suggested}" value="${timerMinutes}">
+      <span style="font-size:.75rem;color:var(--mid)">min</span>
+      <button class="btn btn-ghost" onclick="applyCustom()">Set</button>
+    </div>
+    <div class="timer-actions">
+      <button class="btn btn-primary" onclick="togglePause()">${timerPaused ? '▶ Resume' : '⏸ Pause'}</button>
+      <button class="btn btn-secondary" onclick="finishEarly()">Done early</button>
+    </div>
+  </div>`;
+}
+
+// ─── Break timer ──────────────────────────────────────────────────────────────
+function renderBreakTimer() {
+  const mm = String(Math.floor(timerSeconds/60)).padStart(2,'0');
+  const ss = String(timerSeconds%60).padStart(2,'0');
+  return `<div class="card" style="text-align:center">
+    <div class="section-title">Energy Break</div>
+    ${breakActivity ? `<div class="break-activity" style="margin-bottom:16px">
+      <div class="activity-icon">${breakActivity.icon}</div>
+      <p>${breakActivity.text}</p>
+    </div>` : ''}
+    <div class="timer-display">${mm}:${ss}</div>
+    <div class="timer-actions">
+      <button class="btn btn-primary" onclick="togglePause()">${timerPaused ? '▶ Resume' : '⏸ Pause'}</button>
+      <button class="btn btn-secondary" onclick="finishBreak()">Break done</button>
+    </div>
+  </div>`;
+}
+
+// ─── Done ─────────────────────────────────────────────────────────────────────
+function renderDone() {
+  const t = currentTask;
+  const praiseList = PRAISE;
+  const p = praiseList[Math.floor(Math.random() * praiseList.length)];
+  const style = state.settings.praiseStyle;
+  const msg = p[style] || p.warm;
+  const active = activeTasks(state);
+
+  return `<div class="card">
+    <div class="praise-box">
+      <div class="emoji">✦</div>
+      <p>${msg}</p>
+    </div>
+    ${t ? `<div style="text-align:center;margin-bottom:16px;font-size:.85rem;color:var(--mid)">Completed: <strong>${esc(t.name)}</strong></div>` : ''}
+    <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+      ${active.length > 0
+        ? `<button class="btn btn-primary" onclick="spinAgain()">✦ Spin again</button>`
+        : `<button class="btn btn-primary" disabled>No tasks left</button>`}
+      <button class="btn btn-secondary" onclick="goScreen('home')">Add tasks</button>
+    </div>
+  </div>`;
+}
+
+// ─── Settings ─────────────────────────────────────────────────────────────────
+function renderSettings() {
+  const s = state.settings;
+  return `<div class="card">
+    <div class="section-title">Settings</div>
+    <div class="settings-row">
+      <div>
+        <div class="settings-label">Energy breaks</div>
+        <div class="settings-sub">REST STOP appears every 3–5 tasks</div>
+      </div>
+      <label class="toggle"><input type="checkbox" ${s.breaksEnabled?'checked':''} onchange="toggleSetting('breaksEnabled')"><span class="toggle-slider"></span></label>
+    </div>
+    <div class="settings-row">
+      <div>
+        <div class="settings-label">Reduce motion</div>
+        <div class="settings-sub">Shorter spin, no confetti</div>
+      </div>
+      <label class="toggle"><input type="checkbox" ${s.reduceMotion?'checked':''} onchange="toggleSetting('reduceMotion')"><span class="toggle-slider"></span></label>
+    </div>
+    <div class="settings-row">
+      <div>
+        <div class="settings-label">Praise style</div>
+        <div class="settings-sub">Message shown on completion</div>
+      </div>
+      <div class="seg-group" style="width:220px">
+        ${['warm','dry','minimal'].map(v=>`<button data-val="${v}" class="${s.praiseStyle===v?'active':''}" onclick="setPraiseStyle('${v}')">${v.charAt(0).toUpperCase()+v.slice(1)}</button>`).join('')}
+      </div>
+    </div>
+  </div>`;
+}
+
+// ─── Event binding ────────────────────────────────────────────────────────────
+let formState = { importance: 2, scariness: 2, duration: 2 };
+
+function bindEvents() {
+  // Segmented controls in add-form
+  ['importance','scariness','duration'].forEach(field => {
+    const group = document.getElementById(`seg-${field}`);
+    if (!group) return;
+    group.querySelectorAll('button').forEach(btn => {
+      btn.onclick = () => {
+        formState[field] = parseInt(btn.dataset.val);
+        group.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+      };
+    });
+  });
+
+  const addBtn = document.getElementById('btn-add-task');
+  if (addBtn) {
+    addBtn.onclick = addTask;
+    const input = document.getElementById('task-name');
+    if (input) input.onkeydown = e => { if (e.key==='Enter') addTask(); };
+  }
+
+  // Segmented controls in breakdown form
+  if (showBreakdown) {
+    ['importance','scariness','duration'].forEach(field => {
+      const group = document.getElementById(`bd-seg-${field}`);
+      if (!group) return;
+      group.querySelectorAll('button').forEach(btn => {
+        btn.onclick = () => {
+          breakdownState[field] = parseInt(btn.dataset.val);
+          group.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+        };
+      });
+    });
+    const bdName = document.getElementById('breakdown-name');
+    if (bdName) {
+      bdName.oninput = () => { breakdownState.name = bdName.value; };
+      bdName.onkeydown = e => {
+        if (e.key === 'Enter') createSubtask(currentTask?.id);
+        if (e.key === 'Escape') cancelBreakdown();
+      };
+    }
+  }
+
+  // Segmented controls in inline edit rows
+  if (editingId) {
+    ['importance','scariness','duration'].forEach(field => {
+      const group = document.getElementById(`edit-seg-${field}-${editingId}`);
+      if (!group) return;
+      group.querySelectorAll('button').forEach(btn => {
+        btn.onclick = () => {
+          editState[field] = parseInt(btn.dataset.val);
+          group.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+        };
+      });
+    });
+    const nameEl = document.getElementById(`edit-name-${editingId}`);
+    if (nameEl) nameEl.onkeydown = e => { if (e.key==='Enter') saveEdit(editingId); if (e.key==='Escape') cancelEdit(); };
+  }
+}
+
+function addTask() {
+  const input = document.getElementById('task-name');
+  const name = (input?.value || '').trim();
+  if (!name) { input?.focus(); return; }
+  state.tasks.push({
+    id: uid(),
+    name,
+    importance: formState.importance,
+    scariness: formState.scariness,
+    duration: formState.duration,
+    status: 'active',
+    createdAt: Date.now(),
+  });
+  save(state);
+  formState = { importance: 2, scariness: 2, duration: 2 };
+  render();
+  document.getElementById('task-name')?.focus();
+}
+
+function parkTask(id) {
+  const t = state.tasks.find(t=>t.id===id);
+  if (t) { t.status='backlog'; save(state); render(); }
+}
+
+function unpark(id) {
+  const t = state.tasks.find(t=>t.id===id);
+  if (t) { t.status='active'; save(state); render(); }
+}
+
+function deleteTask(id) {
+  state.tasks = state.tasks.filter(t=>t.id!==id);
+  if (editingId === id) editingId = null;
+  save(state); render();
+}
+
+function renderEditRow(t, swatchColor) {
+  const es = editingId === t.id ? editState : { importance: t.importance, scariness: t.scariness, duration: t.duration };
+  const impLabels = ['Nice to do','Should do','Must do'];
+  const scarLabels = ['Fine','Daunting','Dreading it'];
+  const durLabels = ['<30 min','~1 hour','2 hr+'];
+  return `<div class="edit-row">
+    <div style="display:flex;align-items:center;gap:8px">
+      ${swatchColor ? `<div class="swatch" style="background:${swatchColor};flex-shrink:0"></div>` : ''}
+      <input type="text" id="edit-name-${t.id}" value="${esc(t.name)}" maxlength="60">
+    </div>
+    <div class="edit-fields">
+      <div class="edit-field-row">
+        <span class="edit-field-label">Importance</span>
+        <div class="seg-group" id="edit-seg-importance-${t.id}">
+          ${impLabels.map((l,i)=>`<button data-val="${i+1}" class="${es.importance===i+1?'active':''}">${l}</button>`).join('')}
+        </div>
+      </div>
+      <div class="edit-field-row">
+        <span class="edit-field-label">Scariness</span>
+        <div class="seg-group" id="edit-seg-scariness-${t.id}">
+          ${scarLabels.map((l,i)=>`<button data-val="${i+1}" class="${es.scariness===i+1?'active':''}">${l}</button>`).join('')}
+        </div>
+      </div>
+      <div class="edit-field-row">
+        <span class="edit-field-label">Duration</span>
+        <div class="seg-group" id="edit-seg-duration-${t.id}">
+          ${durLabels.map((l,i)=>`<button data-val="${i+1}" class="${es.duration===i+1?'active':''}">${l}</button>`).join('')}
+        </div>
+      </div>
+    </div>
+    <div class="edit-row-actions">
+      <button class="btn btn-ghost" onclick="cancelEdit()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveEdit('${t.id}')">Save</button>
+    </div>
+  </div>`;
+}
+
+function startEdit(id) {
+  const t = state.tasks.find(t=>t.id===id);
+  if (!t) return;
+  editingId = id;
+  editState = { importance: t.importance, scariness: t.scariness, duration: t.duration };
+  render();
+  document.getElementById(`edit-name-${id}`)?.focus();
+}
+
+function cancelEdit() {
+  editingId = null;
+  render();
+}
+
+function saveEdit(id) {
+  const t = state.tasks.find(t=>t.id===id);
+  if (!t) return;
+  const nameEl = document.getElementById(`edit-name-${id}`);
+  const name = (nameEl?.value || '').trim();
+  if (!name) { nameEl?.focus(); return; }
+  t.name = name;
+  t.importance = editState.importance;
+  t.scariness = editState.scariness;
+  t.duration = editState.duration;
+  editingId = null;
+  save(state);
+  render();
+}
+
+function openBreakdown(id) {
+  const t = state.tasks.find(t => t.id === id);
+  if (!t) return;
+  breakdownState = { name: '', importance: t.importance, scariness: 1, duration: 1 };
+  showBreakdown = true;
+  render();
+  document.getElementById('breakdown-name')?.focus();
+}
+
+function cancelBreakdown() {
+  showBreakdown = false;
+  render();
+}
+
+function createSubtask(parentId) {
+  const nameEl = document.getElementById('breakdown-name');
+  const name = (nameEl?.value || '').trim();
+  if (!name) { nameEl?.focus(); return; }
+  const parent = state.tasks.find(t => t.id === parentId);
+  state.tasks.push({
+    id: uid(),
+    name,
+    importance: breakdownState.importance,
+    scariness: breakdownState.scariness,
+    duration: breakdownState.duration,
+    status: 'active',
+    createdAt: Date.now(),
+  });
+  if (parent) parent.status = 'backlog';
+  showBreakdown = false;
+  save(state);
+  screen = 'home';
+  render();
+}
+
+function startFresh() {
+  if (!confirm('Clear all tasks and start a fresh day?')) return;
+  state = defaultState();
+  save(state); render();
+}
+
+function toggleCollapse(which) {
+  if (which==='backlog') collapseBacklog = !collapseBacklog;
+  else if (which==='done') collapseDone = !collapseDone;
+  else if (which==='about') collapseAbout = !collapseAbout;
+  render();
+}
+
+function goScreen(s) { screen = s; showBreakdown = false; render(); }
+
+function goWheel() {
+  spinAngle = 0;
+  screen = 'wheel';
+  render();
+}
+
+function goTimer() {
+  const durMap = {1:15, 2:30, 3:60};
+  timerMinutes = currentTask ? durMap[currentTask.duration] : 25;
+  timerSeconds = timerMinutes * 60;
+  timerPaused = false;
+  screen = 'timer';
+  render();
+}
+
+function startBreakTimer() {
+  timerMinutes = 5;
+  timerSeconds = 5 * 60;
+  timerPaused = false;
+  screen = 'break-timer';
+  render();
+}
+
+function skipBreak() {
+  // Don't reset counter — stays due
+  screen = 'home';
+  render();
+}
+
+function finishBreak() {
+  clearInterval(timerInterval);
+  timerInterval = null;
+  state.spinsSinceBreak = 0;
+  state.breakTarget = randInt(3,5);
+  save(state);
+  screen = 'home';
+  render();
+}
+
+function markDoneFromResult() {
+  if (currentTask) {
+    currentTask.status = 'done';
+    save(state);
+    if (!state.settings.reduceMotion) launchConfetti();
+  }
+  screen = 'done';
+  render();
+}
+
+function spinAgain() {
+  screen = 'wheel';
+  spinAngle = 0;
+  render();
+}
+
+function setTimer(min) {
+  clearInterval(timerInterval);
+  timerInterval = null;
+  timerMinutes = min;
+  timerSeconds = min * 60;
+  timerPaused = false;
+  render();
+}
+
+function applyCustom() {
+  const inp = document.getElementById('custom-min');
+  const v = Math.max(1, parseInt(inp?.value) || 25);
+  setTimer(v);
+}
+
+function togglePause() {
+  timerPaused = !timerPaused;
+  render();
+}
+
+function finishEarly() {
+  clearInterval(timerInterval);
+  timerInterval = null;
+  if (currentTask) {
+    const t = state.tasks.find(t=>t.id===currentTask.id);
+    if (t) { t.status='done'; save(state); }
+    if (!state.settings.reduceMotion) launchConfetti();
+  }
+  screen = 'done';
+  render();
+}
+
+function onTimerEnd() {
+  clearInterval(timerInterval);
+  timerInterval = null;
+  if (screen === 'break-timer') {
+    finishBreak();
+    return;
+  }
+  if (currentTask) {
+    const t = state.tasks.find(t=>t.id===currentTask.id);
+    if (t) { t.status='done'; save(state); }
+    if (!state.settings.reduceMotion) launchConfetti();
+  }
+  screen = 'done';
+  render();
+}
+
+function startTimerUI() {
+  clearInterval(timerInterval);
+  if (timerPaused) return;
+  timerInterval = setInterval(() => {
+    if (timerPaused) return;
+    timerSeconds = Math.max(0, timerSeconds - 1);
+    const mm = String(Math.floor(timerSeconds/60)).padStart(2,'0');
+    const ss = String(timerSeconds%60).padStart(2,'0');
+    const disp = document.querySelector('.timer-display');
+    if (disp) disp.textContent = `${mm}:${ss}`;
+    if (timerSeconds === 0) onTimerEnd();
+  }, 1000);
+}
+
+function toggleSetting(key) {
+  state.settings[key] = !state.settings[key];
+  save(state); render();
+}
+
+function setPraiseStyle(v) {
+  state.settings.praiseStyle = v;
+  save(state); render();
+}
+
+// ─── Confetti ─────────────────────────────────────────────────────────────────
+function launchConfetti() {
+  const colors = ['#c98b76','#a9c3d4','#8fafb8','#cdb48f','#b3c9b0','#e8d4a0','#bd5e3f'];
+  for (let i=0;i<55;i++) {
+    setTimeout(() => {
+      const el = document.createElement('div');
+      el.className = 'confetti-piece';
+      el.style.cssText = `
+        left:${10+Math.random()*80}vw;
+        top:-20px;
+        background:${colors[Math.floor(Math.random()*colors.length)]};
+        transform:rotate(${Math.random()*360}deg);
+        animation-duration:${1.5+Math.random()*1.5}s;
+        animation-delay:${Math.random()*0.5}s;
+        width:${6+Math.random()*7}px;
+        height:${6+Math.random()*7}px;
+      `;
+      document.body.appendChild(el);
+      el.addEventListener('animationend', () => el.remove());
+    }, i*35);
+  }
+}
+
+// ─── Utility ──────────────────────────────────────────────────────────────────
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ─── Boot ─────────────────────────────────────────────────────────────────────
+render();
+</script>
+</body>
+</html>
