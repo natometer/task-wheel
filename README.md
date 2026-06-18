@@ -52,39 +52,6 @@ Each task's slice of the wheel is proportional to its weight. Squaring importanc
 
 ---
 
-## Publishing on GitHub Pages
-
-1. **Rename the file to `index.html`** in your repository root. GitHub Pages serves `index.html` automatically at your site URL; any other name requires the full path.
-2. In your repo go to **Settings > Pages**.
-3. Under *Branch*, select `main` (or `master`) and `/ (root)`, then click **Save**.
-4. Your site will be live at:
-   ```
-   https://<your-username>.github.io/<repo-name>/
-   ```
-   The first deploy takes about 60 seconds. Subsequent pushes update the live site within a minute.
-
-### Updating the app
-
-Edit `index.html` locally, commit, and push. GitHub Pages picks it up automatically.
-
-```bash
-git add index.html
-git commit -m "update task wheel"
-git push
-```
-
-### Sharing
-
-Send the URL directly. No sign-up, no backend, no install. Each visitor's tasks are stored in their own browser's `localStorage` and never leave their device.
-
----
-
-## Running locally
-
-Just open `index.html` in any browser. No server, no dependencies.
-
----
-
 ## Settings
 
 | Setting | Default | Description |
