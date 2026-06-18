@@ -10,11 +10,11 @@ Made by [Natalie Frantsits](https://nataliefrantsits.at).
 
 ## How to use
 
-1. **Add tasks** — give each a name and rate it on Importance (1-3), Scariness (1-3), and Duration (1-3).
-2. **Spin** — the wheel picks your next task. Scary or long jobs have smaller slices, so they feel startable when you land on them.
-3. **Start the timer** — suggested length comes from your duration rating. Pause, adjust, or finish early.
-4. **Too daunting?** — click *Break it down* to define a smaller first step. The subtask goes straight to the timer. When you're done, you're prompted to define a follow-up, which lands on the wheel.
-5. **Energy breaks** — after every 3-5 tasks a REST STOP appears on the wheel with a restorative suggestion. Taking it resets the counter.
+1. **Add tasks** give each a name and rate it on Importance (1-3), Scariness (1-3), and Duration (1-3).
+2. **Spin** the wheel picks your next task. Scary or long jobs have smaller slices, so they feel startable when you land on them.
+3. **Start the timer** suggested length comes from your duration rating. Pause, adjust, or finish early.
+4. **Too daunting?** click *Break it down* to define a smaller first step. The subtask goes straight to the timer. When you're done, you're prompted to define a follow-up, which lands on the wheel.
+5. **Energy breaks** after every 3-5 tasks a REST STOP appears on the wheel with a restorative suggestion. Taking it resets the counter.
 
 ---
 
@@ -52,39 +52,6 @@ Each task's slice of the wheel is proportional to its weight. Squaring importanc
 
 ---
 
-## Publishing on GitHub Pages
-
-1. **Rename the file to `index.html`** in your repository root. GitHub Pages serves `index.html` automatically at your site URL; any other name requires the full path.
-2. In your repo go to **Settings > Pages**.
-3. Under *Branch*, select `main` (or `master`) and `/ (root)`, then click **Save**.
-4. Your site will be live at:
-   ```
-   https://<your-username>.github.io/<repo-name>/
-   ```
-   The first deploy takes about 60 seconds. Subsequent pushes update the live site within a minute.
-
-### Updating the app
-
-Edit `index.html` locally, commit, and push. GitHub Pages picks it up automatically.
-
-```bash
-git add index.html
-git commit -m "update task wheel"
-git push
-```
-
-### Sharing
-
-Send the URL directly. No sign-up, no backend, no install. Each visitor's tasks are stored in their own browser's `localStorage` and never leave their device.
-
----
-
-## Running locally
-
-Just open `index.html` in any browser. No server, no dependencies.
-
----
-
 ## Settings
 
 | Setting | Default | Description |
@@ -97,4 +64,4 @@ Just open `index.html` in any browser. No server, no dependencies.
 
 ## License
 
-MIT. Do whatever you like with it.
+MIT.
