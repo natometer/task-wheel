@@ -64,4 +64,4 @@ Each task's slice of the wheel is proportional to its weight. Squaring importanc
 
 ## License
 
-MIT.
+MIT. Copyright (c) 2026 Natalie Frantsits
