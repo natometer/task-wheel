@@ -4,7 +4,7 @@
 
 Scary, long jobs get smaller slices on the wheel, easier to land on, easier to start. Rate each task on three scales, spin, and go.
 
-Made by [Natalie Frantsits](https://nataliefrantsits.at).
+Built by [Natalie Frantsits](https://nataliefrantsits.at), clarity coach, Vienna.
 
 ---
 
