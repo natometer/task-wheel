@@ -240,6 +240,13 @@ h1,h2,h3,.display{font-family:'Bodoni Moda',serif}
 .collapsible-header:hover .section-title{color:var(--terra-light)}
 .collapsible-body{overflow:hidden;transition:max-height .3s ease}
 
+/* All done */
+.all-done-card{text-align:center;padding:36px 24px;position:relative;overflow:hidden}
+.all-done-title{font-family:'Bodoni Moda',serif;font-style:italic;font-size:2.6rem;color:var(--terra);line-height:1;margin-bottom:8px}
+.all-done-sub{font-size:.85rem;color:var(--mid);letter-spacing:.06em;text-transform:uppercase;margin-bottom:16px}
+.all-done-count{display:inline-block;font-size:.78rem;font-weight:700;color:var(--terra);background:rgba(26,58,107,.07);border:1px solid var(--light);border-radius:4px;padding:6px 16px;margin-bottom:20px;letter-spacing:.04em}
+.all-done-msg{font-family:'Bodoni Moda',serif;font-style:italic;font-size:1.05rem;color:var(--dark);line-height:1.6;max-width:420px;margin:0 auto}
+
 /* About section */
 .about-body{display:flex;flex-direction:column;gap:20px;margin-top:16px}
 .about-section h3{font-family:'Bodoni Moda',serif;font-style:italic;font-size:1rem;color:var(--terra);margin-bottom:8px}
@@ -253,6 +260,8 @@ h1,h2,h3,.display{font-family:'Bodoni Moda',serif}
 .about-list{display:flex;flex-direction:column;gap:7px;margin:8px 0 8px 16px}
 .about-list li{font-size:.8rem;color:var(--mid);line-height:1.6}
 .about-list li strong{color:var(--dark)}
+.about-link{color:var(--terra);text-decoration:underline;text-decoration-color:rgba(26,58,107,.3);text-underline-offset:2px}
+.about-link:hover{text-decoration-color:var(--terra)}
 .about-table{border:1px solid var(--light);border-radius:4px;overflow:hidden;margin:10px 0;font-size:.72rem}
 .about-table-row{display:grid;grid-template-columns:1.4fr 1.2fr 1.2fr .8fr;gap:0}
 .about-table-row span{padding:7px 10px;border-bottom:1px solid var(--light);color:var(--mid)}
@@ -280,13 +289,13 @@ const COLORS = ['--seg0','--seg1','--seg2','--seg3','--seg4','--seg5','--seg6','
 const getColor = i => getComputedStyle(document.documentElement).getPropertyValue(COLORS[i % COLORS.length]).trim();
 
 const PRAISE = [
-  { warm:'You showed up. That\'s the hardest part — and you did it.', dry:'Task completed. Resistance was overcome.', minimal:'Done.' },
-  { warm:'Action precedes motivation — you didn\'t wait to feel ready. You just started.', dry:'Output delivered. The waiting was longer than the doing.', minimal:'Good.' },
+  { warm:'You showed up. That\'s the hardest part. And you did it.', dry:'Task completed. Resistance was overcome.', minimal:'Done.' },
+  { warm:'Action precedes motivation: you didn\'t wait to feel ready. You just started.', dry:'Output delivered. The waiting was longer than the doing.', minimal:'Good.' },
   { warm:'Small wins compound. This one is in the bank.', dry:'One unit of progress logged. The math works in your favour.', minimal:'Next.' },
   { warm:'The dread was bigger than the task. It always is.', dry:'Anticipated effort exceeded actual effort, as usual.', minimal:'Noted.' },
   { warm:'Momentum is real. You just made the next thing easier.', dry:'Activation energy spent. Subsequent tasks are now cheaper.', minimal:'Carry on.' },
   { warm:'You proved to yourself today that you can start.', dry:'Task initiated and completed. Proof of concept: successful.', minimal:'Check.' },
-  { warm:'That took whatever you had right now — and it was enough.', dry:'Resources applied. Outcome achieved.', minimal:'Done.' },
+  { warm:'That took whatever you had right now. It was enough.', dry:'Resources applied. Outcome achieved.', minimal:'Done.' },
   { warm:'Finishing beats perfect. You finished.', dry:'Completion > perfection. Data point confirmed.', minimal:'Yes.' },
   { warm:'Rest is earned. You earned it.', dry:'Recovery phase authorised.', minimal:'Rest.' },
   { warm:'You picked the hard one and did it anyway. That\'s character.', dry:'Aversive task selected and completed. Avoidance resisted.', minimal:'Solid.' },
@@ -296,9 +305,9 @@ const BREAK_ACTIVITIES = [
   { icon:'☀️', text:'Step outside for two minutes. No phone. Just daylight and air.' },
   { icon:'💧', text:'Drink a full glass of water and stretch your neck side to side.' },
   { icon:'🌿', text:'Look out a window at something far away for 60 seconds. Let your eyes relax.' },
-  { icon:'🚶', text:'Take a short walk — even just to the end of the hall and back, no destination.' },
+  { icon:'🚶', text:'Take a short walk, even just to the end of the hall and back, no destination.' },
   { icon:'🤸', text:'Shake out your arms and legs. Roll your shoulders. Move the body you\'ve been ignoring.' },
-  { icon:'👁️', text:'Soft-focus your eyes — stare at the middle distance and let your gaze go loose.' },
+  { icon:'👁️', text:'Soft-focus your eyes. Stare at the middle distance and let your gaze go loose.' },
   { icon:'🌬️', text:'Four counts in, hold four, out four. Repeat three times. That\'s it.' },
 ];
 
@@ -363,6 +372,8 @@ let editingId = null;
 let editState = {};
 let showBreakdown = false;
 let breakdownState = { name:'', importance:2, scariness:1, duration:1 };
+let isSubtaskChain = false;
+let followUpState = { name:'', importance:2, scariness:1, duration:1 };
 
 // Spin animation state
 let spinAngle = 0;
@@ -388,7 +399,11 @@ function render() {
   else if (screen === 'break-timer') html += renderBreakTimer();
   else if (screen === 'settings') html += renderSettings();
 
-  html += `</div>`;
+  html += `</div>
+  <footer style="text-align:center;padding:32px 16px 24px;font-family:'Space Mono',monospace;font-size:.68rem;color:#8a9ab8;letter-spacing:.06em">
+    Made by <a href="https://nataliefrantsits.at" target="_blank" style="color:var(--terra);text-decoration:underline;text-underline-offset:2px">Natalie Frantsits</a>
+    &nbsp;&middot;&nbsp; &copy; 2026
+  </footer>`;
   app.innerHTML = html;
   bindEvents();
 
@@ -397,6 +412,9 @@ function render() {
     if (screen === 'spinning') startSpin();
   }
   if (screen === 'timer' || screen === 'break-timer') startTimerUI();
+  if (screen === 'done' && activeTasks(state).length === 0 && !state.settings.reduceMotion) {
+    launchConfetti(true);
+  }
 }
 
 // ─── Header ───────────────────────────────────────────────────────────────────
@@ -466,7 +484,7 @@ function renderHome() {
   // On the wheel
   html += `<div class="card">
     <div class="section-title">On the wheel (${active.length})</div>
-    ${active.length === 0 ? `<div class="empty">No active tasks — add some above!</div>` : ''}
+    ${active.length === 0 ? `<div class="empty">No active tasks. Add some above.</div>` : ''}
     <div class="task-list">
       ${active.map((t,i) => {
         if (editingId === t.id) return renderEditRow(t, getColor(i));
@@ -555,23 +573,23 @@ function renderHome() {
           <p>Each task gets a slice of the wheel proportional to its weight. Rate every task on three 1–3 scales and the wheel does the rest.</p>
           <div class="about-table">
             <div class="about-table-row about-table-head">
-              <span>Importance</span><span>Scariness</span><span>Duration</span><span>Slice size</span>
+              <span>Importance</span><span>Scariness</span><span>Duration</span><span>Weight</span>
             </div>
             <div class="about-table-row">
-              <span>3 — Must do</span><span>1 — Fine</span><span>1 — &lt;30 min</span><span>Large</span>
+              <span>3 · Must do</span><span>1 · Fine</span><span>1 · &lt;30 min</span><span>9.0 · large</span>
             </div>
             <div class="about-table-row">
-              <span>3 — Must do</span><span>3 — Dreading it</span><span>3 — 2 hr+</span><span>Small</span>
+              <span>3 · Must do</span><span>3 · Dreading it</span><span>3 · 2 hr+</span><span>1.0 · small</span>
             </div>
             <div class="about-table-row">
-              <span>1 — Nice to do</span><span>3 — Dreading it</span><span>3 — 2 hr+</span><span>Sliver</span>
+              <span>1 · Nice to do</span><span>3 · Dreading it</span><span>3 · 2 hr+</span><span>0.11 · sliver</span>
             </div>
           </div>
         </div>
 
         <div class="about-section">
           <h3>Why this shape</h3>
-          <p>The formula is grounded in <strong>Steel's Procrastination Equation</strong> and <strong>Temporal Motivation Theory</strong>: the likelihood you act on a task rises with its value and falls with its aversiveness and effort cost.</p>
+          <p>The formula is grounded in <a href="https://en.wikipedia.org/wiki/Temporal_motivation_theory" target="_blank" class="about-link"><strong>Steel's Procrastination Equation and Temporal Motivation Theory</strong></a> (Steel &amp; König, 2006; Steel, 2007): the likelihood you act on a task rises with its value and falls with its aversiveness and effort cost.</p>
           <ul class="about-list">
             <li><strong>Importance is squared</strong> so it dominates. High-stakes work always grows its slice regardless of how scary it is.</li>
             <li><strong>Scariness and duration divide</strong> rather than block. A terrifying 3-hour job becomes a small, startable slice instead of a wall you avoid indefinitely. You're more likely to land on it, and more likely to begin once you do.</li>
@@ -583,15 +601,15 @@ function renderHome() {
           <h3>Energy breaks</h3>
           <p>Every 3–5 completed tasks, a REST STOP segment appears on the wheel. This is built on two bodies of research:</p>
           <ul class="about-list">
-            <li><strong>Attention Restoration Theory</strong> (Kaplan, 1989): directed attention depletes across a work session. Brief exposure to low-effort, restorative stimuli (nature, soft focus, gentle movement) replenishes it. The break suggestions in this app are chosen for this reason: they are passive, physical, or nature-leaning. Doomscrolling doesn't restore attention; looking out a window does.</li>
-            <li><strong>Ultradian rhythms</strong>: the brain cycles through roughly 90-minute peaks and troughs of alertness. Periodic rest aligns with these natural cycles rather than fighting them.</li>
+            <li><a href="https://en.wikipedia.org/wiki/Attention_restoration_theory" target="_blank" class="about-link"><strong>Attention Restoration Theory</strong></a> (Kaplan &amp; Kaplan, 1989; Kaplan, 1995): directed attention depletes across a work session. Brief exposure to low-effort, restorative stimuli (nature, soft focus, gentle movement) replenishes it. Break suggestions here are passive, physical, or nature-leaning for exactly this reason. Doomscrolling doesn't restore attention; looking out a window does.</li>
+            <li><a href="https://en.wikipedia.org/wiki/Ultradian_rhythm" target="_blank" class="about-link"><strong>Ultradian rhythms</strong></a> (Kleitman, 1963): the brain cycles through roughly 90-minute peaks and troughs of alertness. Periodic rest aligns with these natural cycles rather than fighting them.</li>
           </ul>
           <p>The REST STOP is sized generously on the wheel so a break actually happens rather than being spun past every time. Skipping is allowed, but the break stays due until taken.</p>
         </div>
 
         <div class="about-section">
           <h3>Breaking tasks down</h3>
-          <p>When a task lands on the wheel and still feels too large to start, you can create a subtask with scariness set to 1. This is the core of <strong>implementation intentions</strong> research (Gollwitzer, 1999): specifying a concrete first action dramatically increases follow-through, even for aversive tasks. The original task is parked to the backlog; once the first step is done, it returns.</p>
+          <p>When a task lands on the wheel and still feels too large to start, you can create a subtask as a concrete first step. This is the core of <a href="https://en.wikipedia.org/wiki/Implementation_intention" target="_blank" class="about-link"><strong>implementation intentions</strong></a> research (Gollwitzer, 1999): specifying exactly what you will do, rather than just intending to do it, dramatically increases follow-through even for aversive tasks. The original task is parked to the backlog; once the first step is done, you define the next one.</p>
         </div>
 
       </div>
@@ -858,7 +876,7 @@ function renderResult() {
       <button class="btn btn-secondary" onclick="markDoneFromResult()">Mark done</button>
       <button class="btn btn-ghost" onclick="goScreen('home')">Not now</button>
     </div>
-    ${t.scariness > 1 ? (showBreakdown ? `
+    ${true ? (showBreakdown ? `
     <div class="breakdown-callout">
       <div class="breakdown-parent">
         <span class="breakdown-parent-label">Original task</span>
@@ -892,7 +910,7 @@ function renderResult() {
         </div>
         <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
           <button class="btn btn-ghost" onclick="cancelBreakdown()">Cancel</button>
-          <button class="btn btn-primary" onclick="createSubtask('${t.id}')">Add subtask to wheel</button>
+          <button class="btn btn-primary" onclick="createSubtask('${t.id}')">Start now →</button>
         </div>
       </div>
     </div>` : `
@@ -950,11 +968,69 @@ function renderBreakTimer() {
 // ─── Done ─────────────────────────────────────────────────────────────────────
 function renderDone() {
   const t = currentTask;
-  const praiseList = PRAISE;
-  const p = praiseList[Math.floor(Math.random() * praiseList.length)];
-  const style = state.settings.praiseStyle;
-  const msg = p[style] || p.warm;
+  const p = PRAISE[Math.floor(Math.random() * PRAISE.length)];
+  const msg = p[state.settings.praiseStyle] || p.warm;
   const active = activeTasks(state);
+
+  if (isSubtaskChain) {
+    return `<div class="card">
+      <div class="praise-box">
+        <div class="emoji">✦</div>
+        <p>${msg}</p>
+      </div>
+      ${t ? `<div style="text-align:center;margin-bottom:20px;font-size:.85rem;color:var(--mid)">Completed: <strong>${esc(t.name)}</strong></div>` : ''}
+      <div class="breakdown-callout">
+        <div class="breakdown-parent" style="margin-bottom:14px">
+          <span class="breakdown-parent-label">What's the next step?</span>
+          <span class="breakdown-parent-name" style="font-size:.8rem;font-weight:400;color:var(--mid);margin-top:4px;line-height:1.5">Define a follow-up task and it goes straight onto the wheel.</span>
+        </div>
+        <div class="breakdown-form">
+          <div class="field-row" style="margin-bottom:10px">
+            <label>Task name</label>
+            <input type="text" id="followup-name" maxlength="60" value="${esc(followUpState.name)}" placeholder="What comes next?">
+          </div>
+          <div class="breakdown-form-fields">
+            <div class="edit-field-row">
+              <span class="edit-field-label">Importance</span>
+              <div class="seg-group" id="fu-seg-importance">
+                ${['Nice to do','Should do','Must do'].map((l,i)=>`<button data-val="${i+1}" class="${followUpState.importance===i+1?'active':''}">${l}</button>`).join('')}
+              </div>
+            </div>
+            <div class="edit-field-row">
+              <span class="edit-field-label">Scariness</span>
+              <div class="seg-group" id="fu-seg-scariness">
+                ${['Fine','Daunting','Dreading it'].map((l,i)=>`<button data-val="${i+1}" class="${followUpState.scariness===i+1?'active':''}">${l}</button>`).join('')}
+              </div>
+            </div>
+            <div class="edit-field-row">
+              <span class="edit-field-label">Duration</span>
+              <div class="seg-group" id="fu-seg-duration">
+                ${['<30 min','~1 hour','2 hr+'].map((l,i)=>`<button data-val="${i+1}" class="${followUpState.duration===i+1?'active':''}">${l}</button>`).join('')}
+              </div>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
+            <button class="btn btn-ghost" onclick="skipFollowUp()">Skip</button>
+            <button class="btn btn-primary" onclick="createFollowUp()">Add to wheel</button>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  if (active.length === 0) {
+    return `<div class="card all-done-card">
+      <div class="all-done-burst" id="all-done-burst"></div>
+      <div class="all-done-title">That's everything.</div>
+      <div class="all-done-sub">Every single task on the list. Done.</div>
+      <div class="all-done-count">✦ ${state.tasks.filter(t=>t.status==='done').length} task${state.tasks.filter(t=>t.status==='done').length===1?'':'s'} completed today</div>
+      <p class="all-done-msg">The list is empty because you emptied it. That's not luck. That's you, repeatedly choosing to start.</p>
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:20px">
+        <button class="btn btn-primary" onclick="startFreshQuiet()">Start a new list</button>
+        <button class="btn btn-secondary" onclick="goScreen('home')">See what's done</button>
+      </div>
+    </div>`;
+  }
 
   return `<div class="card">
     <div class="praise-box">
@@ -963,9 +1039,7 @@ function renderDone() {
     </div>
     ${t ? `<div style="text-align:center;margin-bottom:16px;font-size:.85rem;color:var(--mid)">Completed: <strong>${esc(t.name)}</strong></div>` : ''}
     <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
-      ${active.length > 0
-        ? `<button class="btn btn-primary" onclick="spinAgain()">✦ Spin again</button>`
-        : `<button class="btn btn-primary" disabled>No tasks left</button>`}
+      <button class="btn btn-primary" onclick="spinAgain()">✦ Spin again</button>
       <button class="btn btn-secondary" onclick="goScreen('home')">Add tasks</button>
     </div>
   </div>`;
@@ -1046,6 +1120,30 @@ function bindEvents() {
         if (e.key === 'Enter') createSubtask(currentTask?.id);
         if (e.key === 'Escape') cancelBreakdown();
       };
+    }
+  }
+
+  // Segmented controls in follow-up form
+  if (isSubtaskChain && screen === 'done') {
+    ['importance','scariness','duration'].forEach(field => {
+      const group = document.getElementById(`fu-seg-${field}`);
+      if (!group) return;
+      group.querySelectorAll('button').forEach(btn => {
+        btn.onclick = () => {
+          followUpState[field] = parseInt(btn.dataset.val);
+          group.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+        };
+      });
+    });
+    const fuName = document.getElementById('followup-name');
+    if (fuName) {
+      fuName.oninput = () => { followUpState.name = fuName.value; };
+      fuName.onkeydown = e => {
+        if (e.key === 'Enter') createFollowUp();
+        if (e.key === 'Escape') skipFollowUp();
+      };
+      fuName.focus();
     }
   }
 
@@ -1182,12 +1280,42 @@ function cancelBreakdown() {
   render();
 }
 
+function createFollowUp() {
+  const nameEl = document.getElementById('followup-name');
+  const name = (nameEl?.value || '').trim();
+  if (!name) { nameEl?.focus(); return; }
+  state.tasks.push({
+    id: uid(),
+    name,
+    importance: followUpState.importance,
+    scariness: followUpState.scariness,
+    duration: followUpState.duration,
+    status: 'active',
+    createdAt: Date.now(),
+  });
+  isSubtaskChain = false;
+  followUpState = { name:'', importance:2, scariness:1, duration:1 };
+  save(state);
+  screen = 'wheel';
+  spinAngle = 0;
+  render();
+}
+
+function skipFollowUp() {
+  isSubtaskChain = false;
+  followUpState = { name:'', importance:2, scariness:1, duration:1 };
+  const active = activeTasks(state);
+  if (active.length > 0) { screen = 'wheel'; spinAngle = 0; }
+  else screen = 'home';
+  render();
+}
+
 function createSubtask(parentId) {
   const nameEl = document.getElementById('breakdown-name');
   const name = (nameEl?.value || '').trim();
   if (!name) { nameEl?.focus(); return; }
   const parent = state.tasks.find(t => t.id === parentId);
-  state.tasks.push({
+  const subtask = {
     id: uid(),
     name,
     importance: breakdownState.importance,
@@ -1195,12 +1323,24 @@ function createSubtask(parentId) {
     duration: breakdownState.duration,
     status: 'active',
     createdAt: Date.now(),
-  });
+  };
+  state.tasks.push(subtask);
   if (parent) parent.status = 'backlog';
   showBreakdown = false;
+  isSubtaskChain = true;
+  currentTask = subtask;
   save(state);
-  screen = 'home';
+  const durMap = {1:15, 2:30, 3:60};
+  timerMinutes = durMap[subtask.duration] || 15;
+  timerSeconds = timerMinutes * 60;
+  timerPaused = false;
+  screen = 'timer';
   render();
+}
+
+function startFreshQuiet() {
+  state = defaultState();
+  save(state); screen = 'home'; render();
 }
 
 function startFresh() {
@@ -1346,25 +1486,29 @@ function setPraiseStyle(v) {
 }
 
 // ─── Confetti ─────────────────────────────────────────────────────────────────
-function launchConfetti() {
-  const colors = ['#c98b76','#a9c3d4','#8fafb8','#cdb48f','#b3c9b0','#e8d4a0','#bd5e3f'];
-  for (let i=0;i<55;i++) {
+function launchConfetti(big = false) {
+  const colors = ['#1a3a6b','#2b5db5','#5b9bd5','#7aaad8','#3a6fc4','#a9c3d4','#d0e4f7','#4a82c8'];
+  const count = big ? 180 : 55;
+  const spread = big ? 3 : 1;
+  for (let i = 0; i < count; i++) {
     setTimeout(() => {
       const el = document.createElement('div');
       el.className = 'confetti-piece';
+      const size = big ? 5 + Math.random() * 10 : 6 + Math.random() * 7;
       el.style.cssText = `
-        left:${10+Math.random()*80}vw;
+        left:${Math.random()*100}vw;
         top:-20px;
         background:${colors[Math.floor(Math.random()*colors.length)]};
         transform:rotate(${Math.random()*360}deg);
-        animation-duration:${1.5+Math.random()*1.5}s;
-        animation-delay:${Math.random()*0.5}s;
-        width:${6+Math.random()*7}px;
-        height:${6+Math.random()*7}px;
+        animation-duration:${(big ? 2 : 1.5)+Math.random()*2}s;
+        animation-delay:${Math.random()*(big ? 1.5 : 0.5)}s;
+        width:${size}px;
+        height:${size * (big ? (Math.random() > 0.5 ? 0.4 : 1) : 1)}px;
+        border-radius:${Math.random() > 0.5 ? '50%' : '2px'};
       `;
       document.body.appendChild(el);
       el.addEventListener('animationend', () => el.remove());
-    }, i*35);
+    }, i * (big ? 18 : 35));
   }
 }
 
@@ -1375,6 +1519,14 @@ function esc(s) {
 
 // ─── Boot ─────────────────────────────────────────────────────────────────────
 render();
+
+// Footer
+(function() {
+  const footer = document.createElement('footer');
+  footer.style.cssText = 'text-align:center;padding:32px 16px 24px;font-family:"Space Mono",monospace;font-size:.68rem;color:#8a9ab8;letter-spacing:.06em';
+  footer.innerHTML = 'Made by <a href="https://nataliefrantsits.at" target="_blank" style="color:#1a3a6b;text-decoration:underline;text-underline-offset:2px">Natalie Frantsits</a>';
+  document.getElementById('app').appendChild(footer);
+})();
 </script>
 </body>
 </html>
